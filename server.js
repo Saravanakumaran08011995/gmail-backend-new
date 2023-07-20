@@ -10,7 +10,7 @@ const app = express();
 const authRoute = require("./routes/auth")
 const helmet = require('helmet');
 
-app.use(cors());
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000; 
