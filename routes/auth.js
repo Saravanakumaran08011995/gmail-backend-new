@@ -4,22 +4,29 @@ const CryptoJS = require('crypto-js')
 const jwt = require('jsonwebtoken')
 
 //Register
-router.post("/register", async (req,res)=>{
-    const newUser = new User({
+router.post("/register", async (req, res) => {
+    try {
+      // Check if a user with the provided email already exists
+      const existingUser = await User.findOne({ email: req.body.email });
+      if (existingUser) {
+        // If a user with the email exists, return a 409 status code (Conflict) with an error message
+        return res.status(409).json({ error: "Email is already taken. Please choose a different email." });
+      }
+  
+      // If the email is not taken, proceed to create and save the new user
+      const newUser = new User({
         username: req.body.username,
         email: req.body.email,
         password: CryptoJS.AES.encrypt(req.body.password, process.env.SECRET_KEY).toString()
-    })
-
-    try {
-        const user = await newUser.save();
-        res.status(201).json(user)
+      });
+  
+      const user = await newUser.save();
+      res.status(201).json(user);
     } catch (error) {
-        res.status(500).json(error)
+      res.status(500).json(error);
     }
-    
-})
-
+  });
+  
 //LOGIN
 
 router.post("/login", async (req, res)=>{
