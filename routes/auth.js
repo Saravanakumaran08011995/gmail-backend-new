@@ -29,23 +29,36 @@ router.post("/register", async (req, res) => {
   
 //LOGIN
 
-router.post("/login", async (req, res)=>{
+router.post("/login", async (req, res) => {
     try {
-        const user = await User.findOne({email: req.body.email})
-        !user && res.status(401).json("Invalid Credentials") 
-
-        const bytes = CryptoJS.AES.decrypt(user.password, process.env.SECRET_KEY);
-        const decrypted = bytes.toString(CryptoJS.enc.Utf8)
-
-        decrypted !== req.body.password && res.status(401).json("Invalid Credentials") 
-
-        const accessToken = jwt.sign({id: user.id, isAdmin: user.isAdmin}, process.env.SECRET_KEY, {expiresIn: "1h"})
-        const { password, ...info } = user._doc
-        
-        res.status(200).json({...info, accessToken })
+      const user = await User.findOne({ email: req.body.email });
+  
+      if (!user) {
+        // If user is not found, respond with 401 status and an error object
+        return res.status(401).json({ error: "Invalid Credentials" });
+      }
+  
+      const bytes = CryptoJS.AES.decrypt(user.password, process.env.SECRET_KEY);
+      const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+  
+      if (decrypted !== req.body.password) {
+        // If password doesn't match, respond with 401 status and an error object
+        return res.status(401).json({ error: "Invalid Credentials" });
+      }
+  
+      const accessToken = jwt.sign(
+        { id: user.id, isAdmin: user.isAdmin },
+        process.env.SECRET_KEY,
+        { expiresIn: "1h" }
+      );
+      const { password, ...info } = user._doc;
+  
+      // Respond with 200 status and the user info (excluding the password) and the accessToken
+      res.status(200).json({ ...info, accessToken });
     } catch (err) {
-        res.status(500).json(err)
+      res.status(500).json(err);
     }
-})
+  });
+  
 
 module.exports = router;
